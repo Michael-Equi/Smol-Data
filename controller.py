@@ -43,9 +43,7 @@ class Controller:
         results = self.executor.process_instructions(plan)
         # results = ["('Frequency distribution of workclass categories:\\n',  Private             22696\n Self-emp-not-inc     2541\n Local-gov            2093\n ?                    1836\n State-gov            1298\n Self-emp-inc         1116\n Federal-gov           960\n Without-pay            14\n Never-worked            7\nworkclass                1\nName: workclass, dtype: int64, '\\n')", "('Frequency distribution of education categories:\\n',  HS-grad         10501\n Some-college     7291\n Bachelors        5355\n Masters          1723\n Assoc-voc        1382\n 11th             1175\n Assoc-acdm       1067\n 10th              933\n 7th-8th           646\n Prof-school       576\n 9th               514\n 12th              433\n Doctorate         413\n 5th-6th           333\n 1st-4th           168\n Preschool          51\neducation            1\nName: education, dtype: int64, '\\n')", "('Mean education levels by workclass categories:\\n', workclass\n ?                  NaN\n Federal-gov        NaN\n Local-gov          NaN\n Never-worked       NaN\n Private            NaN\n Self-emp-inc       NaN\n Self-emp-not-inc   NaN\n State-gov          NaN\n Without-pay        NaN\nworkclass           NaN\nName: education_numeric, dtype: float64, '\\n')", "('Trends observed in the summary table and plots:\\n',)", '("1. The workclass \'Without-pay\' has the highest mean education level, followed by \'Self-employed-inc\' and \'Federal-gov\'.",)', "('2. Private sector workers have middle range mean education levels.',)", '("3. The workclass \'Never-worked\' has the lowest mean education level.",)', '("4. In the box plot, work classes \'Self-employed-inc\', \'Federal-gov\', and \'Local-gov\' have higher median education levels.",)', '("5. The range of education levels is widest for \'Self-employed-inc\' and \'Federal-gov\' work classes, showing a diverse workforce.",)']
         return results 
-
-        return text
-
+    
     def reflect(self) -> None:
         pass
 
