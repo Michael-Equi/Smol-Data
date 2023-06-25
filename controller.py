@@ -71,5 +71,3 @@ if __name__ == "__main__":
     conclusion = response["choices"][0]["message"]["content"]
 
     print(f"Conclusion:{conclusion}", )
-    plan = controller.plan("What is the relationship between work class and eduction?")
-    print(plan)
