@@ -1,12 +1,20 @@
 from flask import Flask, request
+from flask_cors import CORS
 import json
 
+from controller import Controller
+from utils import text_to_html
+
 app = Flask(__name__)
+CORS(app)
+
+controller = Controller()
+controller.load_data()
+
 
 @app.route("/")
 def index():
     return "<p>Index</p>"
-
 
 @app.route("/api/input", methods=['POST'])
 def controller_input():
@@ -16,9 +24,32 @@ def controller_input():
 
     data = request.json
     messages = data.get('messages')
-    
+
     if messages is None:
         return json.dumps({'error': 'Invalid request body. Missing key "messages".'}), 400
+    
+    if len(messages) == 0:
+        return json.dumps({'error': 'Invalid request body. "messages" is empty.'}), 400
+
+
+    last_message = messages[-1]
+    role = last_message.get('role')
+
+    if role != 'user':
+        return json.dumps({'error': 'Invalid request body. Last message must be from user.'}), 400
+
+    content = last_message.get('content')
+    if content is None:
+        return json.dumps({'error': 'Invalid request body. Last message must have content.'}), 400
+
+
+    plan = controller.plan(content)
+    html = text_to_html(plan)
+
+    messages.append({
+        'role': 'assistant',
+        'content': html
+    })
 
     return json.dumps(messages), 200
 

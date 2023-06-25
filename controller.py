@@ -50,6 +50,8 @@ class Controller:
 
         print(steps)
 
+        return text
+
     def reflect(self) -> None:
         # Adds to hypothesis buffer
         pass
@@ -57,4 +59,5 @@ class Controller:
 if __name__ == "__main__":
     controller = Controller()
     controller.load_data()
-    controller.plan("What is the relationship between work class and eduction?")
+    plan = controller.plan("What is the relationship between work class and eduction?")
+    print(plan)
