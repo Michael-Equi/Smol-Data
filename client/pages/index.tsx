@@ -14,7 +14,7 @@ import Head from "next/head";
 interface Message {
   role: "user" | "agent";
   text?: string;
-  image?: string;
+  html?: string;
 }
 
 export default function Home() {
@@ -68,7 +68,8 @@ export default function Home() {
                 <Message
                   key={index}
                   model={{
-                    message: message.text,
+                    type: message.html ? "html" : "text",
+                    message: message.html ?? message.text,
                     direction:
                       message.role === "user" ? "outgoing" : "incoming",
                     position: "single",

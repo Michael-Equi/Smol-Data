@@ -3,35 +3,71 @@ import dotenv
 import os
 from prompts import EXECUTOR_PROMPT
 import traceback
+from retry import retry
+import re
 
 dotenv.load_dotenv()
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 openai.organization = os.environ.get("OPENAI_ORG")
 
+overloading_code = """
+printed_statements = []
+def print(*args):
+    printed_statements.append(str(args))
+"""
+
+def extract_python_code_blocks(text):
+    pattern = r'```python(.*?)```'
+    matches = re.findall(pattern, text, re.DOTALL)
+    return [match.strip() for match in matches]
+
 class Executor():
-    def __init__(self, data_description, data_location):
+    def __init__(self, data_description, data_location, data_headers, subset):
         self.data_location = data_location
         self.data_description = data_description
+        self.data_headers = data_headers
+        self.subset = subset
 
     def generate_code(self, steps):
-        messages = [{"role": "system", "content": EXECUTOR_PROMPT(self.data_description, self.data_location)}]
+        messages = [{"role": "system", "content": EXECUTOR_PROMPT(self.data_description, self.data_location, self.data_headers, self.subset)}]
         messages.append({"role": "user", "content": steps})
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=messages
             )
-        text = response["choices"][0]["message"]["content"]
-        return text
+        code = response["choices"][0]["message"]["content"]
+        # code = code.strip(" ").strip("\n").strip("```python").strip("```").replace("```", "")
+        # code = overloading_code + code
+        return code
+    
+    def fix_code(self, steps, code, error):
+        messages = [{"role": "system", "content": EXECUTOR_PROMPT(self.data_description, self.data_location, self.data_headers, self.subset)}]
+        messages.append({"role": "user", "content": steps})
+        messages.append({"role": "assistant", "content": code})
+        messages.append({"role": "user", "content": f"The code throws the following error. Please fix it an rewrite the entire code. Do not paraphrase and only provide the code starting with ```python and ending with ```.\n\nError: {error}"})
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages
+            )
+        code = response["choices"][0]["message"]["content"]
+        return code
     
     def execute(self, code):
         env = {}
-        try:
-            exec(code, env)
-            print("Code executed succesfully")
-            return env
+        exec(code, env)
+        return env
+        
+    @retry(tries=3)
+    def process_instructions(self, steps):
+        code = self.generate_code(steps)
+        try: 
+            env = self.execute(overloading_code + extract_python_code_blocks(code)[0])
         except Exception as e:
             print(f"An error occurred: {e}")
-            return e, traceback.print_exc()
+            print("Fixing code")
+            code = self.fix_code(steps, code, f"{e}, {traceback.print_exc()}")
+        self.execute(overloading_code + extract_python_code_blocks(code)[0])
+        return env["printed_statements"]
 
 
 steps = """
@@ -43,7 +79,7 @@ step 5: Calculate the Pearson's Chi-squared test statistic and p-value to determ
 step 6: Calculate the Cramér's V coefficient to measure the strength of the association between work class and education level [report]
 """
 
-code = """```python
+code = '''```
 import pandas as pd
 import numpy as np
 from scipy.stats import chi2_contingency
@@ -66,7 +102,7 @@ education_freq = df['Education'].value_counts()
 crosstab = pd.crosstab(df['Work Class'], df['Education'])
 
 # Report results
-print("Cross-tabulation:\n", crosstab)
+print("Cross-tabulation:", crosstab)
 
 # Step 5: Calculate the Pearson's Chi-squared test statistic and p-value
 chi_stat, p_value, _, _ = chi2_contingency(crosstab)
@@ -82,13 +118,27 @@ cramers_v = np.sqrt(chi_stat / (n * min_dim))
 
 # Report results
 print("Cramér's V coefficient: ", cramers_v)
-```"""
+```'''
+
+
+
+subsample = """
+39, State-gov, 77516, Bachelors, 13, Never-married, Adm-clerical, Not-in-family, White, Male, 2174, 0, 40, United-States, <=50K
+50, Self-emp-not-inc, 83311, Bachelors, 13, Married-civ-spouse, Exec-managerial, Husband, White, Male, 0, 0, 13, United-States, <=50K
+38, Private, 215646, HS-grad, 9, Divorced, Handlers-cleaners, Not-in-family, White, Male, 0, 0, 40, United-States, <=50K
+"""
 
 if __name__ == "__main__":
     data_description = "This is a dataset from the 1994 consensus"
     data_location = "data/adult.data.csv"
-    executor =  Executor(data_description, data_location)
-    # print(executor.generate_code(steps))
-    code = code.strip('```')
-    print(code)
+    headers = ["age","workclass","fnlwgt","education","education-num", "marital-status","occupation", "relationship","race","sex", "capital-gain","capital-loss","hours-per-week","native-country","makes"]
+    executor =  Executor(data_description, data_location, headers, subsample)
+    print(executor.process_instructions(steps))
+    # # print(executor.generate_code(steps))
+    # # print(code)
+    # code = executor.generate_code(steps)
+    # print(code)
+    # env = executor.execute(code)
+    # print(env["printed_statements"])
+    # import pdb; pdb.set_trace()
  

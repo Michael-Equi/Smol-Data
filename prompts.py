@@ -162,20 +162,23 @@ Subset:
 56, Local-gov, 216851, Bachelors, 13, Married-civ-spouse, Tech-support, Husband, White, Male, 0, 0, 40, United-States, >50K
 """
 
-EXECUTOR_PROMPT = lambda data_description, data_location: f"""
-You will be writing code that loads the following data
+EXECUTOR_PROMPT = lambda data_description, data_location, data_headers, subsample: f"""
+You will be writing code that loads the following data: {data_description}
 
-{data_description}
+The data is located in: {data_location} and includes the headers: {data_headers}.
 
-The data is located in 
+Here is are the first three lines of the data for context:
 
-{data_location}
+{subsample}
 
-Write the code that completes the given task. ONLY INCLUDE EXECUTABLE CODE IN YOUR RESPONSE
+Write the code that completes the given task. Only include executable code in your response.
 
-You should store the variables and print any imporant results. Do not run any function that displays images and graphs, instead you should save them to a folder called assets.
+You should store the variables and print any important results. Do not print the dataset or anything that can not cleanly be presented on the terminal. Provide as much context as possible in the print statements so they are self contained and clearly describe what is being printed. Do not split up print statements of one item, instead include \n or separate the strings with commas. Do not run any function that displays images and graphs, instead you should save them to a folder ./assets.
+
+The code should follow the steps provided and only add print statements in the corresponding block of code if [report] is listed as part of that step.
+
+Only provide a single code block that starts with ```python and ends with ```. Do not provide multiple code blocks.
 """
-
 
 DATALOADER_PROMPT = '''
 You are an expert data scientist specializing in databases. \
