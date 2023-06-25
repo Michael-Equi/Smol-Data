@@ -21,7 +21,7 @@ def get_completion(prompt, model="gpt-3.5-turbo"):
 
 
 
-def get_prompt_data(metadata_filename, dataset_filename):
+def get_prompt_data(metadata_filename, dataset_filename, num_samples=20):
     with open(metadata_filename) as f:
         metadata = f.read()
         
@@ -67,7 +67,7 @@ def get_prompt_data(metadata_filename, dataset_filename):
 
     df = pd.read_csv(dataset_filename)
 
-    data['subset'] = df.sample(n=5).values.tolist()
+    data['subset'] = df.sample(n=num_samples).values.tolist()
 
     return data
 
