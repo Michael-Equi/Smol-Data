@@ -24,7 +24,6 @@ class Controller:
         print("Loading data")
         data = get_prompt_data('data/adult.names', 'data/adult.data.csv')
         data_location = "data/adult.data.csv"
-        print("Creating executor on the data")
         self.executor =  Executor(data["summary"], data_location, data["headers"], data["subset"][:3])
 
     def plan(self, user_request) -> None:
@@ -59,13 +58,16 @@ if __name__ == "__main__":
     print(f"Plan:\n{plan}")
 
     result = controller.execute_plan(plan)
-    print(f"Result:\n{result}")
+    # print(f"Result:\n{result}")
 
-    messages = [{"role": "system", "content": f"Given a user request and a poorly formatted response from a data anlaytics engine provide a direct answer using the data to back it up."}, {"role": "user", "content": f"User request: {user_request}\n\nData:\n{result}"}]
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=messages
-    )
-    conclusion = response["choices"][0]["message"]["content"]
-
-    print(f"Conclusion:{conclusion}", )
+    messages = [{"role": "system", "content": f"Given a user request and a poorly formatted response from a data anlaytics engine provide a direct answer using the data to back it up. Provide as much specifc quanitative evidence in your explination but do not state anything that is not reinforced by the data you are given."}, {"role": "user", "content": f"User request: {user_request}\n\nData:\n{result}"}]
+    while True:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages
+        )
+        answer = response["choices"][0]["message"]["content"]
+        print(answer)
+        messages.append({"role": "assistant", "content": answer})
+        follow_up = input(">>> ")
+        messages.append({"role": "user", "content": follow_up})

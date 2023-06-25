@@ -36,8 +36,6 @@ class Executor():
             messages=messages
             )
         code = response["choices"][0]["message"]["content"]
-        # code = code.strip(" ").strip("\n").strip("```python").strip("```").replace("```", "")
-        # code = overloading_code + code
         return code
     
     def fix_code(self, steps, code, error):
@@ -57,17 +55,19 @@ class Executor():
         exec(code, env)
         return env
         
-    @retry(tries=3)
-    def process_instructions(self, steps):
-        code = self.generate_code(steps)
-        try: 
-            env = self.execute(overloading_code + extract_python_code_blocks(code)[0])
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            print("Fixing code")
-            code = self.fix_code(steps, code, f"{e}, {traceback.print_exc()}")
-        env = self.execute(overloading_code + extract_python_code_blocks(code)[0])
-        return env["printed_statements"]
+    def process_instructions(self, steps, max_fixes=5, max_attempts=3):
+        for _ in range(max_attempts):
+            code = self.generate_code(steps)
+            for _ in range(max_fixes):
+                try: 
+                    print("Executing code")
+                    env = self.execute(overloading_code + extract_python_code_blocks(code)[0])
+                    return env["printed_statements"]
+                except Exception as e:
+                    print("Fixing code")
+                    code = self.fix_code(steps, code, f"{e}, {traceback.print_exc()}")
+            print("Regenerating code")
+        raise ValueError("Code generation and fixing attempts exceeded")
 
 
 steps = """
