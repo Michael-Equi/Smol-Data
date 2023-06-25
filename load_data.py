@@ -41,6 +41,6 @@ def get_prompt_data(metadata_filename, dataset_filename, num_samples=20):
 
 
 if __name__ == '__main__':
-    data = get_prompt_data('adult.names', 'adult.data.csv')
+    data = get_prompt_data('data/adult.names', 'data/adult.data.csv')
 
     print(json.dumps(data, indent=4))

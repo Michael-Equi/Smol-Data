@@ -66,7 +66,7 @@ class Executor():
             print(f"An error occurred: {e}")
             print("Fixing code")
             code = self.fix_code(steps, code, f"{e}, {traceback.print_exc()}")
-        self.execute(overloading_code + extract_python_code_blocks(code)[0])
+        env = self.execute(overloading_code + extract_python_code_blocks(code)[0])
         return env["printed_statements"]
 
 
@@ -119,8 +119,6 @@ cramers_v = np.sqrt(chi_stat / (n * min_dim))
 # Report results
 print("Cramér's V coefficient: ", cramers_v)
 ```'''
-
-
 
 subsample = """
 39, State-gov, 77516, Bachelors, 13, Never-married, Adm-clerical, Not-in-family, White, Male, 2174, 0, 40, United-States, <=50K
