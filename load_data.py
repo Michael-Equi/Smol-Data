@@ -1,12 +1,12 @@
 import os
 import openai
+import pandas as pd
 import json
 
 from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv()) # read local .env file
 
 openai.api_key  = os.getenv('OPENAI_API_KEY')
-
 
 
 
@@ -21,51 +21,59 @@ def get_completion(prompt, model="gpt-3.5-turbo"):
 
 
 
+def get_prompt_data(metadata_filename, dataset_filename):
+    with open(metadata_filename) as f:
+        metadata = f.read()
+        
 
-filenames = {
-    'dataset': 'adult.data.csv',
-    'metadata': 'adult.names',
-}
+    prompt = f'''
+    You are an expert data scientist specializing in databases. \
+    You have extensive knowledge and experience in managing, \
+    analyzing, and optimizing databases. Your goal is to assist \
+    users with any database-related tasks and provide expert \
+    guidance. When interacting with the agent, make your orders \
+    clear and concise, specifying the task you want the agent to \
+    perform.
 
-content = {}
+    Before answering each question, remember that you are giving \
+    your answer to someone that has no knowledge about databases. \
+    For this reason, you should explain your answer in simple yet \
+    detail-oriented terms.
 
-for data_name in filenames:
-    with open(filenames[data_name]) as f:
-        content[data_name] = f.read()
-    
+    Your first task is to extract the metadata from raw text. \
+    You should ONLY return the fields described below, in JSON \
+    format and in order. The keys of the JSON object should be \
+    the names of the fields. For example, if the field is called \
+    "name" and the value is "John", then the JSON object should \
+    be ```{{"name": "some data"}}```.
 
-prompt = f"""
-You are an expert data scientist specializing in databases. \
-You have extensive knowledge and experience in managing, \
-analyzing, and optimizing databases. Your goal is to assist \
-users with any database-related tasks and provide expert \
-guidance. When interacting with the agent, make your orders \
-clear and concise, specifying the task you want the agent to \
-perform.
-
-Before answering each question, remember that you are giving \
-your answer to someone that has no knowledge about databases. \
-For this reason, you should explain your answer in simple yet \
-detail-oriented terms.
-
-Your first task is to extract the metadata from content given \
-belog. In particular, return the following information:
-
-- Summary of what the dataset does:
-- Headers: List of column names for the dataset. Do not include \
-descriptions of the headers but their names only.
-
-You should ONLY return the fields above, in JSON format and in \
-order.
+    - summary: Summary of what the dataset does. It should be \
+    extensive, covering all important information from the text. \
+    - headers: List of column names for the dataset. Do not include \
+    descriptions of the headers but their names only.
 
 
-Content you have available:
-- Metadata: ```{content['metadata']}```.
-"""
+
+    Content you have available: \
+    - Metadata: ```{metadata}```.
+    '''
 
 
 
 
-response = get_completion(prompt)
+    response_json = get_completion(prompt)
+    data = json.loads(response_json)
 
-print(response)
+
+    df = pd.read_csv(dataset_filename)
+
+    data['subset'] = df.sample(n=5).values.tolist()
+
+    return data
+
+
+
+if __name__ == '__main__':
+    data = get_prompt_data('adult.names', 'adult.data.csv')
+
+    print(json.dumps(data, indent=4))
