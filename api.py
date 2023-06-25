@@ -38,20 +38,22 @@ def controller_input():
     if role != 'user':
         return json.dumps({'error': 'Invalid request body. Last message must be from user.'}), 400
 
-    content = last_message.get('content')
-    if content is None:
-        return json.dumps({'error': 'Invalid request body. Last message must have content.'}), 400
+    text = last_message.get('text')
+    if text is None:
+        return json.dumps({'error': 'Invalid request body. Last message must have text.'}), 400
 
 
-    plan = controller.plan(content)
+    plan = controller.plan(text)
     html = text_to_html(plan)
 
     messages.append({
         'role': 'assistant',
-        'content': html
+        'text': html
     })
 
-    return json.dumps(messages), 200
+    print(messages)
+
+    return json.dumps({"messages": messages}), 200
 
 
 
